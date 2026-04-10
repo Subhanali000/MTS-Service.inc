@@ -99,9 +99,9 @@ export async function POST(req: Request) {
       });
 
       // ✅ Total calculation
-      const total =
+     const total =
         updatedCart?.items.reduce(
-          (sum, item) => sum + Number(item.product.price) * item.quantity,
+          (sum: number, item: any) => sum + Number(item.product.price) * item.quantity,
           0
         ) || 0;
 
