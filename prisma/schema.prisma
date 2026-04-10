@@ -1,0 +1,374 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+  
+}
+
+datasource db {
+  provider = "postgresql"
+ 
+}
+
+enum Role {
+  ADMIN
+  CUSTOMER
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model User {
+  id         String   @id @default(cuid())
+  name       String?
+  email      String   @unique
+  provider String?
+  password String?
+  emailVerified   DateTime?
+  acceptedTerms   Boolean  @default(false)
+  termsAcceptedAt DateTime?
+  resetPasswordToken  String?
+  resetPasswordExpire DateTime?
+  role       Role     @default(CUSTOMER)
+  dob      DateTime?
+  image    String?
+  phone      String?
+  avatar    String?
+  isActive   Boolean  @default(true) @map("isActive")
+  createdAt  DateTime @default(now()) @map("createdAt")
+  updatedAt  DateTime @updatedAt @map("updatedAt")
+addresses Address[]
+
+  // Address fields
+  street     String?
+  city       String?
+  state      String?
+  postalCode String?  @map("postalCode")
+  country    String?
+
+  // Vendor fields
+  storeName  String?  @map("storeName")
+  isVerified Boolean? @default(false) @map("isVerified")
+
+  // --- RELATIONS ---
+  orders   Order[]
+  products Product[] @relation("VendorProducts")
+  cart     Cart?     // One-to-one relation with Cart
+}
+model Counter {
+  id  String @id
+  seq Int    @default(0)
+}
+model Coupon {
+  id             String   @id @default(cuid())
+  code           String   @unique
+  title          String
+  description    String?
+  discountType   String   // "PERCENTAGE" | "FIXED"
+  discountValue  Float
+  minOrder       Float    @default(0)
+  maxUses        Int?
+  usedCount      Int      @default(0)
+  isActive       Boolean  @default(true)
+  expiresAt      DateTime?
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+
+model OrderAction {
+  id        String   @id @default(cuid())
+  orderId   String
+  type      String
+  reason    String?
+  images    String[] // PostgreSQL supports string[]
+  createdAt DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
+model Otp {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  code      String
+  expiresAt DateTime
+}
+
+model Review {
+  id          String   @id @default(cuid())
+  productId   String   
+  authorId    String   
+  author      String
+  avatar      String?
+  rating      Float
+  title       String
+  body        String
+  verified    Boolean  @default(false)
+  helpful     Int      @default(0)
+  unhelpful   Int      @default(0)
+
+  voters      Json     // ⚠️ important
+  photos      String[]
+  metrics     Json     // ⚠️ important
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+@@unique([productId, authorId]) 
+}
+
+model SupportTicket {
+  id           String   @id @default(cuid())
+  ticketNumber String
+  userId       String
+  orderNumber  String?
+  subject      String
+  description  String
+  images       Json     // ✅ REQUIRED for this code
+  status       String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Order {
+  id              String   @id @default(cuid())
+  userId          String
+  orderId         String   @unique
+  invoiceNumber String @unique
+  subtotal        Float
+  discount        Float
+  shipping        Float
+  giftWrapFee     Float
+  totalAmount     Float
+  paymentMethod   String
+  paymentStatus   String
+  status          String
+  actions         OrderAction[]
+  razorpayOrderId String?
+  couponCode      String?
+  deliveryTier    String   @default("STANDARD")
+  giftWrap        Boolean  @default(false)
+  giftMessage     String?
+  estimatedDelivery DateTime?
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Relations
+  items           OrderItem[]
+  address         Address?
+
+  createdAt       DateTime @default(now())
+  // ✅ INDEXES
+  @@index([userId])                 // user orders
+  @@index([createdAt])              // sorting by date
+  @@index([status])                 // admin filtering
+  @@index([paymentStatus])          // payment tracking
+  @@index([razorpayOrderId])        // payment lookup
+  @@index([invoiceNumber])          // invoice lookup
+}
+
+
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  productId String
+  price     Float
+  title     String
+  image     String?
+  quantity  Int     @default(1)
+
+  // ✅ Discount snapshot at purchase time
+  originalPrice   Float   @default(0)   // product price at purchase
+  discountAmount   Float   @default(0)   // discount applied at purchase
+  finalPrice      Float   @default(0)   // discounted price at purchase
+  discountPercent Float   @default(0)   // discount % at purchase
+  discountType    String? // "PERCENTAGE" | "FIXED" | null
+  gstRate         Float   @default(18)
+  gstAmount       Float   @default(0)
+  basePrice       Float   @default(0)
+
+  // Relations
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+   @@index([orderId])     // fast order lookup
+  @@index([productId])   // analytics / joins
+  @@map("order_items")
+}
+
+
+
+model Address {
+  id        String   @id @default(cuid())
+  userId    String
+  orderId   String?  @unique   // ✅ FIXED
+
+  type      String?
+  name      String
+  phone     String
+  line1     String
+  line2     String?
+  city      String
+  state     String
+  pincode   String
+  isDefault Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order Order? @relation(fields: [orderId], references: [id])
+
+  @@index([userId])
+  @@index([pincode])   // delivery analytics / filtering
+}
+
+model PickupPoint {
+  id            String   @id @default(cuid())
+  code          String   @unique
+  businessName  String
+  addressLine1  String
+  addressLine2  String?
+  city          String
+  state         String
+  pincode       String
+  country       String   @default("India")
+  phone         String?
+  email         String?
+  isActive      Boolean  @default(true)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([pincode])
+  @@map("pickup_points")
+}
+
+
+
+model Product {
+  id             String      @id @default(cuid())
+  title          String
+  description    String?     @db.Text
+  
+  // Pricing Logic
+   price          Float                      // original/base price
+  originalPrice  Float                      // ALWAYS same as price
+  finalPrice     Float                      // computed discounted price
+  discountType   String?                    // "PERCENTAGE" | "FIXED" | null
+  
+  discountPercent Float      @default(0)    // for UI badges
+  
+  // Inventory & Stats
+  stock          Int         @default(0)
+  totalSold      Int         @default(0) // Needed for the "BEST_SELLER" tag logic
+   model          String?
+  
+  // Shipping & Logistics
+  weight Float @default(1.0)                      // weight in kg (MANDATORY - no fallback)
+  // Categorization & Badges
+  images         String[]    @default([])
+  category       String?
+  isActive       Boolean     @default(true)
+  isFeatured     Boolean     @default(false)
+  isBestSeller   Boolean     @default(false)
+  
+  // Vendor Relation
+  vendorId       String
+  vendor         User        @relation("VendorProducts", fields: [vendorId], references: [id])
+
+  // Relations to Items
+  orderItems     OrderItem[]
+  cartItems      CartItem[]
+
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+   @@index([model])
+  @@index([category])
+  @@index([totalSold])      // Optimized for sorting by best sellers
+  @@map("products")
+}
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@map("carts")
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  cartId    String
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([cartId, productId])
+  @@map("cart_items")
+}
+model Wishlist {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  // This ensures a user can't favorite the same product twice
+  @@unique([userId, productId]) 
+  @@index([userId])
+}
+
+model BulkInquiry {
+  id            String   @id @default(cuid())
+  inquiryNumber String?
+  name          String
+  email         String
+  phone         String
+  company       String?
+  productType   String   @default("")
+  quantity      String?
+  message       String?
+  status        String   @default("pending") // pending, contacted, converted
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([email])
+  @@index([inquiryNumber])
+  @@index([status])
+  @@index([createdAt])
+  @@map("bulk_inquiries")
+}
+
+model HomeServiceBooking {
+  id                 String   @id @default(cuid())
+  name               String
+  email              String
+  phone              String
+  serviceType        String
+  address            String
+  city               String?
+  zipcode            String?
+  deviceModel        String?
+  issueDescription   String?
+  preferredDate      DateTime?
+  status             String   @default("pending") // pending, confirmed, completed, cancelled
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
+  @@map("home_service_bookings")
+}
