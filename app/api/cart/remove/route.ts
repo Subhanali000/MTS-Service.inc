@@ -3,6 +3,24 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
+type CartRemoveBody = {
+  productId?: string;
+  quantity?: number;
+  remove?: boolean;
+};
+
+type TxClient = Omit<
+  typeof prisma,
+  "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
+>;
+
+type CartItemWithProduct = {
+  quantity: number;
+  product: {
+    price: number | string;
+  };
+};
+
 export async function POST(req: Request) {
   try {
     // 🔐 Secure auth (NO guest)
@@ -17,7 +35,7 @@ export async function POST(req: Request) {
 
     const userId = session.user.id;
 
-    const body = await req.json();
+    const body = (await req.json()) as CartRemoveBody;
     const productId = body.productId;
     const quantity = Number(body.quantity ?? -1);
     const remove = Boolean(body.remove);
@@ -37,7 +55,7 @@ export async function POST(req: Request) {
       );
     }
 
-      const cartData = await prisma.$transaction(async (tx: any) => {
+    const cartData = await prisma.$transaction(async (tx: TxClient) => {
       // ✅ Ensure cart exists
       const cart = await tx.cart.upsert({
         where: { userId },
@@ -99,9 +117,10 @@ export async function POST(req: Request) {
       });
 
       // ✅ Total calculation
-     const total =
+      const total =
         updatedCart?.items.reduce(
-          (sum: number, item: any) => sum + Number(item.product.price) * item.quantity,
+          (sum: number, item: CartItemWithProduct) =>
+            sum + Number(item.product.price) * item.quantity,
           0
         ) || 0;
 
@@ -113,7 +132,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      items: cartData.cart?.items.map((item) => ({
+      items: cartData.cart?.items.map((item: CartItemWithProduct & { product: unknown }) => ({
         product: item.product,
         quantity: item.quantity,
       })),
