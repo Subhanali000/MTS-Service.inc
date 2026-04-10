@@ -37,7 +37,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const cartData = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+     const cartData = await prisma.$transaction(async (tx: TransactionClient) => {
       // ✅ Ensure cart exists
       const cart = await tx.cart.upsert({
         where: { userId },
