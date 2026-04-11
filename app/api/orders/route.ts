@@ -482,7 +482,9 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    const productById = new Map(products.map(product => [product.id, product]))
+    const productById = new Map<string, (typeof products)[number]>(
+      products.map((product: (typeof products)[number]) => [product.id, product])
+    )
 
     let calculatedSubtotal = 0
     let discountedItemsTotal = 0
