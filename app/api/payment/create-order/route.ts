@@ -482,7 +482,7 @@ export async function POST(req: NextRequest) {
     const standardIncludedDeliveryPerItem = getStandardIncludedDeliveryCharge()
 
     const itemsWithDbPrice = items.map(cartItem => {
-      const product = products.find(p => p.id === cartItem.productId)
+      const product = products.find((p: (typeof products)[number]) => p.id === cartItem.productId)
 
       if (!product) {
         throw new Error(`Product not found: ${cartItem.productId}`)
