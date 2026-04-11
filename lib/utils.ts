@@ -94,7 +94,16 @@ export async function GET() {
     },
   })
 
-  const normalised = coupons.map((c) => ({
+  type CouponRow = {
+    code: string
+    title: string
+    description: string | null
+    discountType: string
+    discountValue: number
+    minOrder: number
+  }
+
+  const normalised = coupons.map((c: CouponRow) => ({
     code: c.code,
     label: c.title,
     description: c.description,

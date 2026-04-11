@@ -29,7 +29,7 @@ type PickupLocationRow = {
 };
 
 export async function getPickupLocation(): Promise<PickupLocation> {
-  const activeRows = await prisma.$queryRawUnsafe<PickupLocationRow[]>(`
+  const activeRows = (await prisma.$queryRawUnsafe(`
     SELECT
       "businessName",
       "addressLine1",
@@ -44,11 +44,11 @@ export async function getPickupLocation(): Promise<PickupLocation> {
     WHERE "code" = 'MTS_MAIN_PICKUP' OR "isActive" = true
     ORDER BY "createdAt" ASC
     LIMIT 1
-  `)
+  `)) as PickupLocationRow[]
 
   const fallbackRows = activeRows.length > 0
     ? activeRows
-    : await prisma.$queryRawUnsafe<PickupLocationRow[]>(`
+    : (await prisma.$queryRawUnsafe(`
         SELECT
           "businessName",
           "addressLine1",
@@ -62,7 +62,7 @@ export async function getPickupLocation(): Promise<PickupLocation> {
         FROM "pickup_points"
         ORDER BY "createdAt" ASC
         LIMIT 1
-      `)
+      `)) as PickupLocationRow[]
 
   const pickupPoint = fallbackRows[0]
 

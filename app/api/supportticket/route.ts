@@ -24,9 +24,16 @@ type UserOrderRef = {
   orderId: string | null;
 }
 
-type SupportTicketWhere = NonNullable<
-  Parameters<typeof prisma.supportTicket.findMany>[0]
->["where"];
+type SupportTicketWhere = {
+  OR: Array<{
+    userId?: string;
+    orderNumber?: {
+      in: string[];
+    };
+  }>;
+  status?: string;
+  orderNumber?: string;
+};
 
 export async function GET(req: Request) {
   try {
