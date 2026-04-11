@@ -10,6 +10,11 @@ type TxClient = Omit<
   "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
 >
 
+type UpdatedOrderItem = {
+  productId: string
+  quantity: number
+}
+
 const DEBUG_LOGS = process.env.NODE_ENV !== "production"
 
 // ─── Main POST Handler ───────────────────────────────────────────────────────
@@ -221,7 +226,7 @@ export async function POST(req: NextRequest) {
           await tx.cartItem.deleteMany({
             where: {
               cartId: userCart.id,
-              productId: { in: updatedOrder.items.map(item => item.productId) },
+              productId: { in: updatedOrder.items.map((item: UpdatedOrderItem) => item.productId) },
             },
           })
         }
