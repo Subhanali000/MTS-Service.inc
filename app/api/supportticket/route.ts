@@ -48,7 +48,7 @@ export async function GET(req: Request) {
 
     const userOrderNumbers = userOrders
       .map((o: UserOrderRef) => o.orderId)
-      .filter((orderId): orderId is string => Boolean(orderId));
+      .filter((orderId: string | null): orderId is string => Boolean(orderId));
 
     const where: NonNullable<SupportTicketWhere> = {
       OR: [
