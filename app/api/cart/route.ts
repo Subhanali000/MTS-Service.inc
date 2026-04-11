@@ -8,6 +8,13 @@ type TxClient = Omit<
   "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
 >;
 
+type CartItemWithProduct = {
+  quantity: number;
+  product: {
+    price: number | string;
+  };
+};
+
 export async function POST(req: Request) {
   try {
     // 🔐 Auth
@@ -99,7 +106,7 @@ export async function POST(req: Request) {
       }
 
       // ✅ Fetch updated cart
-      const updatedCart = await tx.cart.findUnique({
+      const updatedCart = (await tx.cart.findUnique({
         where: { userId },
         include: {
           items: {
@@ -108,7 +115,7 @@ export async function POST(req: Request) {
             },
           },
         },
-      });
+      })) as { items: CartItemWithProduct[] } | null;
 
       // ✅ Calculate total HERE (correct place)
       const total =
@@ -159,7 +166,7 @@ export async function GET() {
     const userId = session.user.id;
 
     // Fetch the cart including items and the associated product details
-    const cart = await prisma.cart.findUnique({
+    const cart = (await prisma.cart.findUnique({
       where: { userId },
       include: {
         items: {
@@ -168,14 +175,14 @@ export async function GET() {
           },
         },
       },
-    });
+    })) as { items: CartItemWithProduct[] } | null;
 
     if (!cart) {
       return NextResponse.json({ success: true, items: [], total: 0 });
     }
 
     const total = cart.items.reduce(
-      (sum, item) => sum + (item.product.price * item.quantity),
+      (sum: number, item) => sum + Number(item.product.price) * item.quantity,
       0
     );
 
