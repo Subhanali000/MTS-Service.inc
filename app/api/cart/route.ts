@@ -113,7 +113,7 @@ export async function POST(req: Request) {
       // ✅ Calculate total HERE (correct place)
       const total =
         updatedCart?.items.reduce(
-          (sum, item) => sum + item.product.price * item.quantity,
+          (sum: number, item) => sum + Number(item.product.price) * item.quantity,
           0
         ) || 0;
 
