@@ -8,6 +8,13 @@ type TxClient = Omit<
   "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
 >;
 
+type CartItemWithProduct = {
+  quantity: number;
+  product: {
+    price: number | string;
+  };
+};
+
 export async function POST(req: Request) {
   try {
     // 🔐 Auth (NO guest)
@@ -100,7 +107,7 @@ export async function POST(req: Request) {
       }
 
       // ✅ Fetch updated cart
-      const updatedCart = await tx.cart.findUnique({
+      const updatedCart = (await tx.cart.findUnique({
         where: { userId },
         include: {
           items: {
@@ -109,12 +116,12 @@ export async function POST(req: Request) {
             },
           },
         },
-      });
+      })) as { items: CartItemWithProduct[] } | null;
 
       // ✅ Total calculation
       const total =
         updatedCart?.items.reduce(
-          (sum: number, item) =>
+          (sum: number, item: CartItemWithProduct) =>
             sum + Number(item.product.price) * item.quantity,
           0
         ) || 0;
@@ -127,7 +134,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      items: result.cart?.items.map((item) => ({
+      items: result.cart?.items.map((item: CartItemWithProduct) => ({
         product: item.product,
         quantity: item.quantity,
       })),
