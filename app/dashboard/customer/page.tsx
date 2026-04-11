@@ -5,6 +5,12 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma"; // Your Prisma singleton
 import LogoutButton from "@/components/LogoutButton";
 
+type CustomerOrder = {
+  id: string;
+  totalAmount: number;
+  status: string;
+};
+
 export default async function CustomerDashboard() {
   const session = await getServerSession(authOptions);
 
@@ -21,10 +27,10 @@ export default async function CustomerDashboard() {
 
   // 3. Fetch Orders from PostgreSQL
   // Using findMany to get all orders for this user
-  const orders = await prisma.order.findMany({
+  const orders = (await prisma.order.findMany({
     where: { userId: session.user.id },
     orderBy: { createdAt: 'desc' } // Optional: Show newest first
-  });
+  })) as CustomerOrder[];
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -58,7 +64,7 @@ export default async function CustomerDashboard() {
             <p className="text-gray-500">No orders yet.</p>
           ) : (
             <ul className="space-y-4">
-              {orders.map((o) => (
+              {orders.map((o: CustomerOrder) => (
   <li key={o.id} className="border rounded-lg p-4 hover:shadow transition">
     <p className="text-sm text-gray-500">
       Order ID: {o.id}
