@@ -2,6 +2,16 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getStandardIncludedDeliveryCharge } from "@/lib/pricing"
 
+type OrderDetailsItem = {
+  productId: string
+  title: string
+  quantity: number
+  originalPrice: number
+  finalPrice: number
+  discountPercent: number
+  discountAmount: number
+}
+
 /**
  * Public endpoint to fetch order details by dbOrderId (UUID)
  * Used on payment page to display order breakdown before payment
@@ -51,7 +61,7 @@ export async function GET(
         paymentMethod: order.paymentMethod,
         paymentStatus: order.paymentStatus,
         status: order.status,
-        items: order.items.map((item) => ({
+        items: order.items.map((item: OrderDetailsItem) => ({
           productId: item.productId,
           title: item.title,
           quantity: item.quantity,
