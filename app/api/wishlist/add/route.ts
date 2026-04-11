@@ -3,6 +3,10 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth"; // Path to your NextAuth config
 import { prisma } from "@/lib/prisma";   // Path to your Prisma client
 
+type WishlistRow = {
+  productId: string;
+};
+
 /**
  * GET: Fetch all product IDs in user's wishlist
  */
@@ -20,7 +24,7 @@ export async function GET() {
     });
 
     // Map to a simple array of IDs for easier frontend consumption
-    const items = wishlistItems.map((item) => item.productId);
+    const items = wishlistItems.map((item: WishlistRow) => item.productId);
 
     return NextResponse.json({ success: true, items });
   } catch (error) {
@@ -70,7 +74,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ 
       success: true, 
-      items: updatedItems.map(i => i.productId) 
+      items: updatedItems.map((item: WishlistRow) => item.productId) 
     });
   } catch (error) {
     console.error("Wishlist POST Error:", error);
