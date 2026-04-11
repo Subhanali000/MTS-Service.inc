@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -37,7 +38,7 @@ export async function POST(req: Request) {
     }
 
     // ⚡ Prisma Transaction
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // ✅ Validate product
       const product = await tx.product.findUnique({
         where: { id: productId },
