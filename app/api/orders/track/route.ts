@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
     const baseLineTotals = order.items.map((item: TrackedOrderItem) => Math.max(0, Number(item.price || 0) * Number(item.quantity || 0)))
     let allocatedDisplayTotal = 0
 
-    const displayItems = order.items.map((item: TrackedOrderItem, index) => {
+    const displayItems = order.items.map((item: TrackedOrderItem, index: number) => {
       let displayLineTotal = 0
       if (baseSubtotal > 0) {
         if (index === order.items.length - 1) {
