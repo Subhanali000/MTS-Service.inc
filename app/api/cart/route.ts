@@ -132,7 +132,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      items: cartData.cart?.items.map((item) => ({
+      items: cartData.cart?.items.map((item: CartItemWithProduct) => ({
         product: item.product,
         quantity: item.quantity,
       })),
@@ -188,7 +188,7 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      items: cart.items.map((item) => ({
+      items: cart.items.map((item: CartItemWithProduct) => ({
         product: item.product,
         quantity: item.quantity,
       })),
