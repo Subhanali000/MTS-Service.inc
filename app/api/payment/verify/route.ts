@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
-import { Prisma } from "@prisma/client"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import crypto from "crypto"
 import { sendOrderCommunications } from "@/lib/orderNotifications"
+
+type TxClient = Omit<
+  typeof prisma,
+  "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
+>
 
 const DEBUG_LOGS = process.env.NODE_ENV !== "production"
 
@@ -140,7 +144,7 @@ export async function POST(req: NextRequest) {
 
     // ─── Prisma Transaction ──────────────────────────────────────────────
     try {
-      const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const result = await prisma.$transaction(async (tx: TxClient) => {
 
         // ─── Update Order ───────────────────────────────────────────────
         const updatedOrder = await tx.order.update({

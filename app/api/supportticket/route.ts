@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import sanitizeHtml from "sanitize-html";
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import nodemailer from "nodemailer";
@@ -20,6 +19,10 @@ interface ITicketRequestBody {
   phone?: string;
   images?: { url: string }[];
 }
+
+type SupportTicketWhere = NonNullable<
+  Parameters<typeof prisma.supportTicket.findMany>[0]
+>["where"];
 
 export async function GET(req: Request) {
   try {
@@ -41,7 +44,7 @@ export async function GET(req: Request) {
 
     const userOrderNumbers = userOrders.map((o) => o.orderId).filter(Boolean);
 
-    const where: Prisma.SupportTicketWhereInput = {
+    const where: SupportTicketWhere = {
       OR: [
         { userId: session.user.id },
         ...(userOrderNumbers.length > 0 ? [{ orderNumber: { in: userOrderNumbers } }] : []),
@@ -163,7 +166,7 @@ export async function POST(req: Request) {
         images: ticketImages.map((img) => ({
           url: img.url,
           uploadedAt: img.uploadedAt.toISOString(),
-        })) as Prisma.InputJsonValue,
+        })),
         status: "open",
       },
     });

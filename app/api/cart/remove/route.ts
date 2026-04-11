@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -9,6 +8,10 @@ type CartRemoveBody = {
   quantity?: number;
   remove?: boolean;
 };
+type TxClient = Omit<
+  typeof prisma,
+  "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
+>;
 type CartItemWithProduct = {
   quantity: number;
   product: {
@@ -50,7 +53,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const cartData = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const cartData = await prisma.$transaction(async (tx: TxClient) => {
       // ✅ Ensure cart exists
       const cart = await tx.cart.upsert({
         where: { userId },

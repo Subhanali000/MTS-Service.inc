@@ -1,4 +1,3 @@
-import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -30,7 +29,7 @@ type PickupLocationRow = {
 };
 
 export async function getPickupLocation(): Promise<PickupLocation> {
-  const activeRows = await prisma.$queryRaw<PickupLocationRow[]>(Prisma.sql`
+  const activeRows = await prisma.$queryRawUnsafe<PickupLocationRow[]>(`
     SELECT
       "businessName",
       "addressLine1",
@@ -49,7 +48,7 @@ export async function getPickupLocation(): Promise<PickupLocation> {
 
   const fallbackRows = activeRows.length > 0
     ? activeRows
-    : await prisma.$queryRaw<PickupLocationRow[]>(Prisma.sql`
+    : await prisma.$queryRawUnsafe<PickupLocationRow[]>(`
         SELECT
           "businessName",
           "addressLine1",

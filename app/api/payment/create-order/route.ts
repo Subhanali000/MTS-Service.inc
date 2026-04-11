@@ -1,6 +1,5 @@
 ﻿// app/api/checkout/create-order/route.ts
 import { NextRequest, NextResponse } from "next/server"
-import { Prisma } from "@prisma/client"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
@@ -20,6 +19,11 @@ import {
   getCatalogEffectivePrice,
   getCatalogOriginalEffectivePrice,
 } from "@/lib/pricing"
+
+type TxClient = Omit<
+  typeof prisma,
+  "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
+>
 
 const DEBUG_LOGS = process.env.NODE_ENV !== "production"
 
@@ -890,7 +894,7 @@ export async function POST(req: NextRequest) {
 
     // ─── Create Order + explicit order-linked address snapshot (Prisma) ───
     debugLog("[Create Order Debug] Creating order and explicit order-linked address snapshot")
-    const dbOrder = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const dbOrder = await prisma.$transaction(async (tx: TxClient) => {
       const createdOrder = await tx.order.create({
         data: {
           userId: orderUserId,
