@@ -14,7 +14,7 @@ import { getCatalogEffectivePrice, getCatalogOriginalEffectivePrice, getCatalogD
 const SLIDES = [
   "https://images.unsplash.com/photo-1517336714731-489689fd1ca8",
   "https://images.unsplash.com/photo-1587614382346-4ec70e388b28",
-  "https://images.unsplash.com/photo-1518779578993-ec3579fee39f"
+  "https://images.unsplash.com/photo-1492724441997-5dc865305da7"
 ];
 type ProductTag = "NEW" | "BEST_SELLER" | "TRENDING" | "DEFAULT";
 
