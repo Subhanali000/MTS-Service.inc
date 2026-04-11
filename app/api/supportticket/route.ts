@@ -20,6 +20,10 @@ interface ITicketRequestBody {
   images?: { url: string }[];
 }
 
+type UserOrderRef = {
+  orderId: string | null;
+}
+
 type SupportTicketWhere = NonNullable<
   Parameters<typeof prisma.supportTicket.findMany>[0]
 >["where"];
@@ -42,9 +46,11 @@ export async function GET(req: Request) {
       select: { orderId: true },
     });
 
-    const userOrderNumbers = userOrders.map((o) => o.orderId).filter(Boolean);
+    const userOrderNumbers = userOrders
+      .map((o: UserOrderRef) => o.orderId)
+      .filter((orderId): orderId is string => Boolean(orderId));
 
-    const where: SupportTicketWhere = {
+    const where: NonNullable<SupportTicketWhere> = {
       OR: [
         { userId: session.user.id },
         ...(userOrderNumbers.length > 0 ? [{ orderNumber: { in: userOrderNumbers } }] : []),
