@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
+type TrackedOrderItem = {
+  title: string
+  quantity: number
+  price: number | null
+  image: string | null
+}
+
 function maskPhone(phone?: string | null) {
   if (!phone) return null
   const digits = phone.replace(/\D/g, "")
@@ -46,7 +53,7 @@ export async function GET(req: NextRequest) {
     const baseSubtotal = Number.isFinite(order.subtotal)
       ? Number(order.subtotal)
       : order.items.reduce(
-          (sum, item) => sum + Math.max(0, Number(item.price || 0) * Number(item.quantity || 0)),
+          (sum: number, item: TrackedOrderItem) => sum + Math.max(0, Number(item.price || 0) * Number(item.quantity || 0)),
           0
         )
     const baseDiscount = Number.isFinite(order.discount) ? Number(order.discount) : 0
@@ -54,10 +61,10 @@ export async function GET(req: NextRequest) {
     const displayDiscount = Math.max(0, Math.round(baseDiscount))
     const displayTotal = Math.max(0, Math.round(order.totalAmount ?? (displaySubtotal - displayDiscount)))
 
-    const baseLineTotals = order.items.map(item => Math.max(0, Number(item.price || 0) * Number(item.quantity || 0)))
+    const baseLineTotals = order.items.map((item: TrackedOrderItem) => Math.max(0, Number(item.price || 0) * Number(item.quantity || 0)))
     let allocatedDisplayTotal = 0
 
-    const displayItems = order.items.map((item, index) => {
+    const displayItems = order.items.map((item: TrackedOrderItem, index) => {
       let displayLineTotal = 0
       if (baseSubtotal > 0) {
         if (index === order.items.length - 1) {
