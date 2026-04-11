@@ -10,6 +10,15 @@ import { getStandardIncludedDeliveryCharge } from "@/lib/pricing"
 
 const DEBUG_LOGS = process.env.NODE_ENV !== "production"
 
+type InvoiceOrderItem = {
+  title: string
+  quantity: number
+  price: number | null
+  originalPrice: number | null
+  finalPrice: number | null
+  discountPercent: number | null
+}
+
 function firstExistingPath(paths: string[]): string | null {
   for (const filePath of paths) {
     if (filePath && fs.existsSync(filePath)) return filePath
@@ -228,7 +237,9 @@ const qrCodeData = await QRCode.toDataURL(qrCodeDetailedData, {
 
     currentY += headerHeight
 
-    order.items.forEach((item, i) => {
+    const invoiceItems = order.items as InvoiceOrderItem[]
+
+    invoiceItems.forEach((item, i) => {
       const itemHasDiscount = (item.discountPercent ?? 0) > 0
       const discountPercent = item.discountPercent ?? 0
       const unitBaseOriginal = Math.max(0, Number(item.originalPrice ?? item.price ?? 0))
